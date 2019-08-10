@@ -1,10 +1,13 @@
+terraform {
+  required_version = ">= 0.12"
+}
 # instance the provider
 provider "libvirt" {
   uri = "qemu:///system"
 }
 
 variable "tfvm_count" {
-  default = "2"
+  default = "3"
 }
 
 # We fetch the latest ubuntu release image from their mirrors
@@ -19,11 +22,12 @@ resource "libvirt_volume" "tfvmqcow" {
 
 # Create a network for our VMs
 resource "libvirt_network" "vm_network" {
-   name = "vm_network"
-   addresses = ["192.168.22.0/24"]
-   dhcp {
-        enabled = true
-   }
+  name = "vm_network"
+  addresses = ["192.168.22.0/24"]
+  mode = "nat"
+  mtu = 9000
+  autostart = true
+#  domain = "k8s.local"
 }
 
 # Use CloudInit to add our ssh-key to the instance
@@ -32,7 +36,7 @@ resource "libvirt_cloudinit_disk" "commoninit" {
           pool = "images"
           user_data = "${data.template_file.user_data.rendered}"
           network_config = "${data.template_file.network_config.rendered}"
-        }
+}
 
 data "template_file" "user_data" {
   template = "${file("${path.module}/cloud_init.cfg")}"
@@ -41,7 +45,6 @@ data "template_file" "user_data" {
 data "template_file" "network_config" {
   template = "${file("${path.module}/network_config.cfg")}"
 }
-
 
 # Create the machine
 resource "libvirt_domain" "tfvm" {
@@ -53,8 +56,9 @@ resource "libvirt_domain" "tfvm" {
   cloudinit = "${libvirt_cloudinit_disk.commoninit.id}"
 
   network_interface {
-    network_id = "${libvirt_network.vm_network.id}"
     network_name = "vm_network"
+    network_id = "${libvirt_network.vm_network.id}"
+    wait_for_lease = true
   }
 
   # IMPORTANT
@@ -73,7 +77,7 @@ resource "libvirt_domain" "tfvm" {
   }
 
   disk {
-       volume_id =  "${element(libvirt_volume.tfvmqcow.*.id, count.index)}"
+       volume_id = "${element(libvirt_volume.tfvmqcow.*.id, count.index)}"
   }
 
   graphics {
@@ -89,6 +93,5 @@ output "vmhn" {
 output "ips" {
   value = "${libvirt_domain.tfvm.*.network_interface.0.addresses}"
 }
-
 
 
