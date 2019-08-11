@@ -27,7 +27,7 @@ resource "libvirt_network" "vm_network" {
   mode = "nat"
   mtu = 9000
   autostart = true
-#  domain = "k8s.local"
+# domain = "k8s.local"
 }
 
 # Use CloudInit to add our ssh-key to the instance
