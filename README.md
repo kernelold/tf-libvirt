@@ -2,7 +2,7 @@
 ## On Arch linux
 ### Packman
 `
-pacman -S ebtables bridge-utils openbsd-netcat libvirt libvirt-glib libvirt-python qemu-block-gluster qemu-block-iscsi qemu-block-rbd qemu-guest-agent qemu-headless qemu-headless-arch-extra dnsmasq ebtables virt-install nwfilter nftables openntpd 
+pacman -S ebtables bridge-utils openbsd-netcat libvirt libvirt-glib libvirt-python qemu-block-gluster qemu-block-iscsi qemu-block-rbd qemu-guest-agent qemu-headless qemu-headless-arch-extra dnsmasq ebtables virt-install nwfilter nftables openntpd cdrkit git 
 `
 ### Services
 `
