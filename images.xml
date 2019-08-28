@@ -1,7 +1,7 @@
 <pool type="dir">
     <name>images</name>
         <target>
-        <path>/images</path>
+		<path>/vm/img</path>
     </target>
 </pool>
 

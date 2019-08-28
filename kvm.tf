@@ -7,7 +7,16 @@ provider "libvirt" {
 }
 
 variable "tfvm_count" {
-  default = "3"
+  default = "4"
+}
+variable "tfvm_vcpu" {
+  default = "4"
+}
+variable "tfvm_ram" {
+  default = "8096"
+}
+variable "tfvm_vardisk" {
+  default = "60"
 }
 
 # We fetch the latest ubuntu release image from their mirrors
@@ -16,8 +25,16 @@ resource "libvirt_volume" "tfvmqcow" {
   count = "${var.tfvm_count}"
   name = "tfvmqcow-${count.index}"
   pool = "vms"
-  source = "/images/ubuntu-16.04-server-cloudimg-amd64-disk1.img"
+  source = "/vm/img/ubuntu-16.04-server-cloudimg-amd64-disk1.img"
   format = "qcow2"
+}
+
+resource "libvirt_volume" "tfvmvar" {
+  count = "${var.tfvm_count}"
+  name = "tfvmvar-${count.index}"
+  pool = "vms"
+  format = "qcow2"
+  size = "${var.tfvm_vardisk * 1024 * 1024 * 1024}"
 }
 
 # Create a network for our VMs
@@ -50,8 +67,8 @@ data "template_file" "network_config" {
 resource "libvirt_domain" "tfvm" {
   count = "${var.tfvm_count}"
   name = "tfvm${count.index}"
-  memory = "4096"
-  vcpu = 2
+  memory = "${var.tfvm_ram}"
+  vcpu = "${var.tfvm_vcpu}"
 
   cloudinit = "${libvirt_cloudinit_disk.commoninit.id}"
 
@@ -78,6 +95,10 @@ resource "libvirt_domain" "tfvm" {
 
   disk {
        volume_id = "${element(libvirt_volume.tfvmqcow.*.id, count.index)}"
+  }
+
+  disk {
+       volume_id = "${element(libvirt_volume.tfvmvar.*.id, count.index)}"
   }
 
   graphics {
