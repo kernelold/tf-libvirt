@@ -18,6 +18,9 @@ variable "tfvm_ram" {
 variable "tfvm_vardisk" {
   default = "60"
 }
+variable "tfvm_usrdisk" {
+  default = "60"
+}
 
 # We fetch the latest ubuntu release image from their mirrors
 #  source = "https://cloud-images.ubuntu.com/releases/xenial/release/ubuntu-16.04-server-cloudimg-amd64-disk1.img"
@@ -35,6 +38,14 @@ resource "libvirt_volume" "tfvmvar" {
   pool = "vms"
   format = "qcow2"
   size = "${var.tfvm_vardisk * 1024 * 1024 * 1024}"
+}
+
+resource "libvirt_volume" "tfvmusr" {
+  count = "${var.tfvm_count}"
+  name = "tfvmusr-${count.index}"
+  pool = "vms"
+  format = "qcow2"
+  size = "${var.tfvm_usrdisk * 1024 * 1024 * 1024}"
 }
 
 # Create a network for our VMs
@@ -101,6 +112,10 @@ resource "libvirt_domain" "tfvm" {
        volume_id = "${element(libvirt_volume.tfvmvar.*.id, count.index)}"
   }
 
+  disk {
+       volume_id = "${element(libvirt_volume.tfvmusr.*.id, count.index)}"
+  }
+
   graphics {
     type = "spice"
     listen_type = "address"
@@ -108,9 +123,6 @@ resource "libvirt_domain" "tfvm" {
   }
 }
 
-output "vmhn" {
-  value = "${libvirt_domain.tfvm.*.network_interface.0.hostname}"
-}
 output "ips" {
   value = "${libvirt_domain.tfvm.*.network_interface.0.addresses}"
 }
